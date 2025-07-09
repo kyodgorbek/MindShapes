@@ -15,52 +15,54 @@ import java.util.*
 
 @Composable
 fun ResultsScreen(results: List<TestResult>, onBack: () -> Unit) {
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = "Scoreboard",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        item {
+            Text(
+                text = "Scoreboard",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
 
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(results) { result ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Text(text = "Name: ${result.userName}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text(text = "Test: ${result.testType}", fontSize = 14.sp)
-                        Text(text = "Score: ${result.score}", fontSize = 14.sp)
-                        result.personalityType?.let {
-                            Text(text = "Personality: $it", fontSize = 14.sp)
-                        }
-                        Text(
-                            text = "Date: ${
-                                SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
-                                    .format(Date(result.timestamp))
-                            }",
-                            fontSize = 14.sp
-                        )
+        items(results) { result ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+                    Text(text = "Name: ${result.userName}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(text = "Test: ${result.testType}", fontSize = 14.sp)
+                    Text(text = "Score: ${result.score}", fontSize = 14.sp)
+                    result.personalityType?.let {
+                        Text(text = "Personality: $it", fontSize = 14.sp)
                     }
+                    Text(
+                        text = "Date: ${
+                            SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+                                .format(Date(result.timestamp))
+                        }",
+                        fontSize = 14.sp
+                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Back to Home")
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back to Home")
+            }
+            Spacer(modifier = Modifier.height(32.dp)) // Additional space below the button
         }
     }
 }

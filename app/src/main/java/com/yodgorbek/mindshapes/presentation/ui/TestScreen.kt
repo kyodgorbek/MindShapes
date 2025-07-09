@@ -35,7 +35,6 @@ fun TestScreen(
     var currentQuestionIndex by remember { mutableIntStateOf(0) }
     var score by remember { mutableIntStateOf(0) }
     val selectedAnswers = remember { mutableStateMapOf<Int, Int>() }
-    val traitScores = remember { mutableStateMapOf<String, Int>() }
 
     Column(
         modifier = Modifier
@@ -47,11 +46,9 @@ fun TestScreen(
             value = userName,
             onValueChange = onUserNameChange,
             label = { Text("Enter your name") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.textFieldColors(
-                focusedTextColor = Color.Black,
-            )
+            modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (currentQuestionIndex < questions.size) {
@@ -96,16 +93,7 @@ fun TestScreen(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .clickable {
-                            if (!selectedAnswers.containsKey(question.id)) {
-                                selectedAnswers[question.id] = index
-                                if (testType == QuestionType.LOGICAL && question.correctAnswerIndex == index) {
-                                    score++
-                                } else if (testType == QuestionType.PERSONALITY && question.personalityTrait != null) {
-                                    val points = if (index == 0) 2 else 1
-                                    traitScores[question.personalityTrait] =
-                                        traitScores.getOrDefault(question.personalityTrait, 0) + points
-                                }
-                            }
+                            selectedAnswers[question.id] = index
                         }
                         .scale(scale),
                     colors = CardDefaults.cardColors(
@@ -120,17 +108,12 @@ fun TestScreen(
                         RadioButton(
                             selected = isSelected,
                             onClick = {
-                                if (!selectedAnswers.containsKey(question.id)) {
-                                    selectedAnswers[question.id] = index
-                                    if (testType == QuestionType.LOGICAL && question.correctAnswerIndex == index) {
-                                        score++
-                                    } else if (testType == QuestionType.PERSONALITY && question.personalityTrait != null) {
-                                        val points = if (index == 0) 2 else 1
-                                        traitScores[question.personalityTrait] =
-                                            traitScores.getOrDefault(question.personalityTrait, 0) + points
-                                    }
-                                }
-                            }
+                                selectedAnswers[question.id] = index
+                            },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = MaterialTheme.colorScheme.primary,
+                                unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                         Text(
                             text = option,
@@ -143,26 +126,44 @@ fun TestScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { currentQuestionIndex++ },
+                onClick = {
+                    if (testType == QuestionType.LOGICAL &&
+                        selectedAnswers[question.id] == question.correctAnswerIndex
+                    ) {
+                        score++
+                    }
+                    currentQuestionIndex++
+                },
                 enabled = selectedAnswers.containsKey(question.id),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Next")
             }
         } else {
-            val personalityType = if (testType == QuestionType.PERSONALITY) {
-                when (traitScores.maxByOrNull { it.value }?.key) {
-                    "Leadership" -> "Decisive Leader"
-                    "Adaptability" -> "Adaptive Innovator"
-                    "Teamwork" -> "Collaborative Team Player"
-                    "ProblemSolving" -> "Strategic Problem Solver"
-                    "Communication" -> "Effective Communicator"
-                    "Resilience" -> "Resilient Achiever"
-                    "Creativity" -> "Creative Visionary"
-                    "Ethics" -> "Ethical Decision Maker"
-                    else -> "Balanced Contributor"
+            val updatedTraitScores = remember {
+                val result = mutableMapOf<String, Int>()
+                questions.forEach { question ->
+                    if (testType == QuestionType.PERSONALITY && question.personalityTrait != null) {
+                        val selected = selectedAnswers[question.id]
+                        val points = if (selected == 0) 2 else 1
+                        result[question.personalityTrait!!] =
+                            result.getOrDefault(question.personalityTrait!!, 0) + points
+                    }
                 }
-            } else null
+                result
+            }
+
+            val updatedPersonalityType = when (updatedTraitScores.maxByOrNull { it.value }?.key) {
+                "Leadership" -> "Decisive Leader"
+                "Adaptability" -> "Adaptive Innovator"
+                "Teamwork" -> "Collaborative Team Player"
+                "ProblemSolving" -> "Strategic Problem Solver"
+                "Communication" -> "Effective Communicator"
+                "Resilience" -> "Resilient Achiever"
+                "Creativity" -> "Creative Visionary"
+                "Ethics" -> "Ethical Decision Maker"
+                else -> "Balanced Contributor"
+            }
 
             if (testType == QuestionType.LOGICAL) {
                 Text(
@@ -172,20 +173,25 @@ fun TestScreen(
                 )
             } else {
                 Text(
-                    text = "Your Personality Type: $personalityType",
+                    text = "Your Personality Type: $updatedPersonalityType",
                     fontSize = 20.sp,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
-                score = 0
-                traitScores.forEach { (trait, value) ->
+
+                updatedTraitScores.forEach { (trait, value) ->
                     Text("$trait: $value points")
-                    score += value
                 }
             }
 
             Button(
-                onClick = { onSubmit(score, personalityType) },
+                onClick = {
+                    val finalScore = if (testType == QuestionType.LOGICAL) score
+                    else updatedTraitScores.values.sum()
+                    val personalityType = if (testType == QuestionType.PERSONALITY) updatedPersonalityType else null
+                    onSubmit(finalScore, personalityType)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Submit Test")
