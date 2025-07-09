@@ -1,19 +1,10 @@
 package com.yodgorbek.mindshapes.presentation.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
 import com.yodgorbek.mindshapes.domain.model.QuestionType
-import com.yodgorbek.mindshapes.presentation.TestUiState
-
-import com.yodgorbek.mindshapes.presentation.TestViewModel
+import com.yodgorbek.mindshapes.presentation.*
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -24,23 +15,33 @@ fun AppNavigation(
     var userName by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
+    // 🔁 Handle navigation side-effects
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                UiEvent.NavigateToTest -> navController.navigate("test")
+                UiEvent.NavigateToResults -> navController.navigate("results")
+                UiEvent.NavigateToResultSaved -> navController.navigate("result_saved")
+                UiEvent.NavigateToHome -> navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+                is UiEvent.ShowError -> {
+                    println("Error: ${event.message}")
+                    navController.navigate("home")
+                }
+            }
+        }
+    }
+
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             HomeScreen(
-                onPersonalityTestClick = {
-                    viewModel.loadQuestions(QuestionType.PERSONALITY)
-                    navController.navigate("test")
-                },
-                onLogicalTestClick = {
-                    viewModel.loadQuestions(QuestionType.LOGICAL)
-                    navController.navigate("test")
-                },
-                onViewResultsClick = {
-                    viewModel.loadResults()
-                    navController.navigate("results")
-                }
+                onPersonalityTestClick = { viewModel.loadQuestions(QuestionType.PERSONALITY) },
+                onLogicalTestClick = { viewModel.loadQuestions(QuestionType.LOGICAL) },
+                onViewResultsClick = { viewModel.loadResults() }
             )
         }
+
         composable("test") {
             when (val state = uiState) {
                 is TestUiState.Success -> TestScreen(
@@ -50,43 +51,44 @@ fun AppNavigation(
                     onUserNameChange = { userName = it },
                     onSubmit = { score, personalityType ->
                         viewModel.submitTest(userName, state.testType, score, personalityType)
-                        navController.navigate("result_saved")
                     }
                 )
                 is TestUiState.Loading -> LoadingScreen()
                 is TestUiState.Error -> ErrorScreen(state.message) {
-                    navController.navigate("home")
+                    viewModel.clearUiState()
                 }
-                else -> {
-                    navController.navigate("home")
-                }
+                else -> Unit
             }
         }
+
         composable("result_saved") {
-            when (val state = uiState) {
-                is TestUiState.ResultSaved -> ResultSavedScreen(
+            val state = uiState
+            if (state is TestUiState.ResultSaved) {
+                ResultSavedScreen(
                     score = state.score,
                     personalityType = state.personalityType,
-                    onRestart = { navController.navigate("home") }
+                    onRestart = {
+                        viewModel.clearUiState()
+                        navController.navigate("home")
+                    }
                 )
-                else -> {
-                    navController.navigate("home")
-                }
             }
         }
+
         composable("results") {
             when (val state = uiState) {
                 is TestUiState.ResultsLoaded -> ResultsScreen(
                     results = state.results,
-                    onBack = { navController.navigate("home") }
+                    onBack = {
+                        viewModel.clearUiState()
+                        navController.navigate("home")
+                    }
                 )
                 is TestUiState.Loading -> LoadingScreen()
                 is TestUiState.Error -> ErrorScreen(state.message) {
-                    navController.navigate("home")
+                    viewModel.clearUiState()
                 }
-                else -> {
-                    navController.navigate("home")
-                }
+                else -> Unit
             }
         }
     }

@@ -101,8 +101,9 @@ fun TestScreen(
                                 if (testType == QuestionType.LOGICAL && question.correctAnswerIndex == index) {
                                     score++
                                 } else if (testType == QuestionType.PERSONALITY && question.personalityTrait != null) {
+                                    val points = if (index == 0) 2 else 1
                                     traitScores[question.personalityTrait] =
-                                        traitScores.getOrDefault(question.personalityTrait, 0) + if (index == 0) 2 else 1
+                                        traitScores.getOrDefault(question.personalityTrait, 0) + points
                                 }
                             }
                         }
@@ -124,8 +125,9 @@ fun TestScreen(
                                     if (testType == QuestionType.LOGICAL && question.correctAnswerIndex == index) {
                                         score++
                                     } else if (testType == QuestionType.PERSONALITY && question.personalityTrait != null) {
+                                        val points = if (index == 0) 2 else 1
                                         traitScores[question.personalityTrait] =
-                                            traitScores.getOrDefault(question.personalityTrait, 0) + if (index == 0) 2 else 1
+                                            traitScores.getOrDefault(question.personalityTrait, 0) + points
                                     }
                                 }
                             }
@@ -174,6 +176,12 @@ fun TestScreen(
                     fontSize = 20.sp,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                score = 0
+                traitScores.forEach { (trait, value) ->
+                    Text("$trait: $value points")
+                    score += value
+                }
             }
 
             Button(

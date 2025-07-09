@@ -9,9 +9,7 @@ import com.yodgorbek.mindshapes.domain.usecase.GetPersonalityQuestionsUseCase
 import com.yodgorbek.mindshapes.domain.usecase.GetTestResultsUseCase
 import com.yodgorbek.mindshapes.domain.usecase.SaveTestResultUseCase
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -25,6 +23,9 @@ class TestViewModel : ViewModel(), KoinComponent {
     private val _uiState = MutableStateFlow<TestUiState>(TestUiState.Initial)
     val uiState: StateFlow<TestUiState> = _uiState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent: SharedFlow<UiEvent> = _uiEvent.asSharedFlow()
+
     fun loadQuestions(testType: QuestionType) {
         viewModelScope.launch {
             _uiState.value = TestUiState.Loading
@@ -34,8 +35,10 @@ class TestViewModel : ViewModel(), KoinComponent {
                     QuestionType.LOGICAL -> getLogicalShapeQuestions()
                 }
                 _uiState.value = TestUiState.Success(questions, testType)
+                _uiEvent.emit(UiEvent.NavigateToTest)
             } catch (e: Exception) {
                 _uiState.value = TestUiState.Error(e.message ?: "Unknown error")
+                _uiEvent.emit(UiEvent.ShowError(e.message ?: "Unknown error"))
             }
         }
     }
@@ -51,6 +54,7 @@ class TestViewModel : ViewModel(), KoinComponent {
                 )
             )
             _uiState.value = TestUiState.ResultSaved(score, personalityType)
+            _uiEvent.emit(UiEvent.NavigateToResultSaved)
         }
     }
 
@@ -60,9 +64,15 @@ class TestViewModel : ViewModel(), KoinComponent {
             try {
                 val results = getTestResults()
                 _uiState.value = TestUiState.ResultsLoaded(results)
+                _uiEvent.emit(UiEvent.NavigateToResults)
             } catch (e: Exception) {
                 _uiState.value = TestUiState.Error(e.message ?: "Unknown error")
+                _uiEvent.emit(UiEvent.ShowError(e.message ?: "Unknown error"))
             }
         }
+    }
+
+    fun clearUiState() {
+        _uiState.value = TestUiState.Initial
     }
 }
