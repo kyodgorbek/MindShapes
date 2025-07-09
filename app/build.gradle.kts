@@ -55,7 +55,7 @@ dependencies {
     implementation("io.insert-koin:koin-androidx-compose")
     implementation("androidx.compose.animation:animation:1.8.3")
     implementation("androidx.navigation:navigation-compose:2.9.1")
-
+    implementation ("com.google.android.gms:play-services-ads:23.0.0")
 
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")

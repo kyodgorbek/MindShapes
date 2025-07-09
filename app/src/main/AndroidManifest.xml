@@ -13,6 +13,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MindShapes"
         tools:targetApi="31">
+
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-2564748736569149~1556572286" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -20,7 +26,6 @@
             android:theme="@style/Theme.MindShapes">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
